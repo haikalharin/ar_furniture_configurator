@@ -47,6 +47,12 @@ class FurnitureConfig {
     accent: accent ?? this.accent,
   );
 
+  /// Panjang meter lari untuk harga per meter. Kitchen set L dihitung
+  /// dari kedua sisinya.
+  double get runLengthM => type.kind == FurnitureKind.kitchenL
+      ? (widthCm + depthCm) / 100
+      : widthCm / 100;
+
   String get sizeLabel =>
       '${widthCm.round()} × ${depthCm.round()} × ${heightCm.round()} cm';
 

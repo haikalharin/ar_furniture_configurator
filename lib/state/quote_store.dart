@@ -53,7 +53,12 @@ class QuoteStore extends ChangeNotifier {
       b
         ..writeln('${i + 1}. ${item.config.type.name}')
         ..writeln('   ${item.config.specLabel}')
-        ..writeln('   ${formatRupiah(item.price.total)}');
+        ..writeln(
+          item.config.type.pricedPerMeter
+              ? '   ${formatRupiah(item.price.total)} '
+                    '(≈ ${formatRupiah(item.price.perMeterRun)}/m lari)'
+              : '   ${formatRupiah(item.price.total)}',
+        );
     }
     b
       ..writeln()

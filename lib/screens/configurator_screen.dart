@@ -50,19 +50,19 @@ class _ConfiguratorScreenState extends State<ConfiguratorScreen> {
                   child: Column(
                     children: [
                       _DimensionSlider(
-                        label: 'Lebar',
+                        label: type.widthLabel,
                         range: type.width,
                         value: _config.widthCm,
                         onChanged: (v) => _update(_config.copyWith(widthCm: v)),
                       ),
                       _DimensionSlider(
-                        label: 'Dalam',
+                        label: type.depthLabel,
                         range: type.depth,
                         value: _config.depthCm,
                         onChanged: (v) => _update(_config.copyWith(depthCm: v)),
                       ),
                       _DimensionSlider(
-                        label: 'Tinggi',
+                        label: type.heightLabel,
                         range: type.height,
                         value: _config.heightCm,
                         onChanged: (v) =>
@@ -131,7 +131,11 @@ class _ConfiguratorScreenState extends State<ConfiguratorScreen> {
                 ),
                 _Section(
                   title: 'Rincian estimasi',
-                  child: _Breakdown(price: price, model: model),
+                  child: _Breakdown(
+                    price: price,
+                    model: model,
+                    config: _config,
+                  ),
                 ),
               ],
             ),
@@ -140,6 +144,7 @@ class _ConfiguratorScreenState extends State<ConfiguratorScreen> {
       ),
       bottomNavigationBar: _PriceBar(
         total: price.total,
+        perMeter: type.pricedPerMeter ? price.perMeterRun : null,
         addLabel: widget.returnTo == null
             ? 'Tambah ke penawaran'
             : 'Taruh di ruangan',
@@ -213,25 +218,74 @@ class _DimensionSlider extends StatelessWidget {
   final double value;
   final ValueChanged<double> onChanged;
 
+  /// Ukuran custom: ketik angka persis dalam cm, dibatasi rentang produksi.
+  Future<void> _typeExact(BuildContext context) async {
+    final controller = TextEditingController(text: value.round().toString());
+    final result = await showDialog<double>(
+      context: context,
+      builder: (context) {
+        void submit() {
+          final v = double.tryParse(controller.text.replaceAll(',', '.'));
+          if (v != null) Navigator.of(context).pop(v);
+        }
+
+        return AlertDialog(
+          title: Text('$label (cm)'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              suffixText: 'cm',
+              helperText:
+                  'Antara ${range.min.round()} dan ${range.max.round()} cm',
+            ),
+            onSubmitted: (_) => submit(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Batal'),
+            ),
+            FilledButton(onPressed: submit, child: const Text('Pakai')),
+          ],
+        );
+      },
+    );
+    controller.dispose();
+    if (result != null) onChanged(result.clamp(range.min, range.max));
+  }
+
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Row(
       children: [
-        SizedBox(width: 56, child: Text(label)),
+        SizedBox(width: 72, child: Text(label)),
         Expanded(
           child: Slider(
             value: value,
             min: range.min,
             max: range.max,
             // Langkah 5 cm, cukup halus untuk fitting tanpa terlalu sensitif.
+            // Ukuran yang lebih presisi bisa diketik lewat angka di kanan.
             divisions: ((range.max - range.min) / 5).round(),
             label: '${value.round()} cm',
             onChanged: onChanged,
           ),
         ),
-        SizedBox(
-          width: 56,
-          child: Text('${value.round()} cm', textAlign: TextAlign.end),
+        InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: () => _typeExact(context),
+          child: Container(
+            width: 72,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            decoration: BoxDecoration(
+              border: Border.all(color: scheme.outlineVariant),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text('${value.round()} cm', textAlign: TextAlign.end),
+          ),
         ),
       ],
     );
@@ -285,45 +339,104 @@ class _Swatch extends StatelessWidget {
 }
 
 class _Breakdown extends StatelessWidget {
-  const _Breakdown({required this.price, required this.model});
+  const _Breakdown({
+    required this.price,
+    required this.model,
+    required this.config,
+  });
 
   final PriceBreakdown price;
   final FurnitureModel model;
+  final FurnitureConfig config;
+
+  String _area(double m2) => '${m2.toStringAsFixed(2).replaceAll('.', ',')} m²';
 
   @override
   Widget build(BuildContext context) {
-    final rows = <(String, int)>[
+    final hardware = [
+      if (model.doors > 0) '${model.doors} engsel pintu',
+      if (model.slidingDoors > 0) '${model.slidingDoors} set pintu geser',
+      if (model.drawers > 0) '${model.drawers} rel laci',
+    ].join(', ');
+    final rows = <(String, String?, int)>[
       (
-        'Bahan & finishing (${price.panelAreaM2.toStringAsFixed(1)} m² panel)',
+        'Bahan & finishing ${config.material.name}',
+        '${_area(price.panelAreaM2)} × ${formatRupiah(config.material.pricePerM2)}/m²'
+            ' (termasuk sisa potong ${(PricingRules.wasteFactor * 100).round()}%)',
         price.material,
       ),
-      if (price.accent > 0) ('Aksen (${model.accentCount} pcs)', price.accent),
-      if (price.hardware > 0)
+      if (price.stone > 0)
         (
-          'Hardware (${model.doors} pintu, ${model.drawers} laci)',
-          price.hardware,
+          'Top table solid surface',
+          '${_area(model.areaOf(PartSlot.stone))} × '
+              '${formatRupiah(PricingRules.stonePerM2)}/m²',
+          price.stone,
         ),
-      if (price.glass > 0) ('Kaca & cermin', price.glass),
-      if (price.upholstery > 0) ('Jok kain', price.upholstery),
-      ('Ongkos kerja', price.labor),
+      if (price.glass > 0) ('Kaca & cermin', null, price.glass),
+      if (price.upholstery > 0) ('Jok kain', null, price.upholstery),
+      if (price.lighting > 0)
+        (
+          'Lampu LED',
+          '${model.lengthOf(PartSlot.light).toStringAsFixed(1).replaceAll('.', ',')} m × '
+              '${formatRupiah(PricingRules.ledPerMeter)}/m',
+          price.lighting,
+        ),
+      if (price.accent > 0)
+        (
+          'Aksen ${config.accent.name}',
+          '${model.accentCount} pcs × ${formatRupiah(config.accent.unitPrice)}',
+          price.accent,
+        ),
+      if (price.hardware > 0) ('Hardware', hardware, price.hardware),
+      ('Ongkos kerja', null, price.labor),
     ];
-    final style = Theme.of(context).textTheme.bodyMedium;
+    final theme = Theme.of(context);
+    final style = theme.textTheme.bodyMedium;
+    final detail = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (final (label, value) in rows)
+        for (final (label, sub, value) in rows)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(child: Text(label, style: style)),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(label, style: style),
+                      if (sub != null) Text(sub, style: detail),
+                    ],
+                  ),
+                ),
                 Text(formatRupiah(value), style: style),
               ],
             ),
           ),
         const Divider(),
+        Row(
+          children: [
+            Expanded(child: Text('Total', style: theme.textTheme.titleSmall)),
+            Text(formatRupiah(price.total), style: theme.textTheme.titleSmall),
+          ],
+        ),
+        if (config.type.pricedPerMeter)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              'Setara ${formatRupiah(price.perMeterRun)} per meter lari '
+              '(${price.runLengthM.toStringAsFixed(2).replaceAll('.', ',')} m)',
+              style: style?.copyWith(color: theme.colorScheme.primary),
+            ),
+          ),
+        const SizedBox(height: 8),
         Text(
           'Estimasi untuk diskusi saat fitting. Harga final setelah survei ukur ulang.',
-          style: Theme.of(context).textTheme.bodySmall,
+          style: detail,
         ),
       ],
     );
@@ -335,9 +448,13 @@ class _PriceBar extends StatelessWidget {
     required this.total,
     required this.addLabel,
     required this.onAdd,
+    this.perMeter,
   });
 
   final int total;
+
+  /// Harga per meter lari, bila furnitur ini ditawarkan per meter.
+  final int? perMeter;
   final String addLabel;
   final VoidCallback onAdd;
 
@@ -366,6 +483,11 @@ class _PriceBar extends StatelessWidget {
                         color: theme.colorScheme.primary,
                       ),
                     ),
+                    if (perMeter != null)
+                      Text(
+                        '≈ ${formatRupiah(perMeter!)}/m lari',
+                        style: theme.textTheme.labelSmall,
+                      ),
                   ],
                 ),
               ),

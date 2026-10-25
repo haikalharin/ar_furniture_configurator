@@ -16,13 +16,17 @@ flutter test
 
 ## Alur di aplikasi
 
-1. **Pilih Furnitur**: 18 item dengan filter kategori ruangan.
+1. **Pilih Furnitur**: 23 item dengan filter kategori ruangan. Item berlabel
+   **Estetik**: kitchen set L, kitchen set lengkap (atas + bawah, backsplash, rak
+   terbuka, LED), kitchen island waterfall, lemari sliding cermin, lemari fluted +
+   display kaca ber-LED.
    - Kamar tidur: lemari pakaian, tempat tidur (headboard berjok), nakas, meja rias (dengan cermin)
    - Ruang tamu: bufet TV, backdrop TV, meja kopi, rak buku, lemari pajangan (pintu kaca), rak sepatu
    - Dapur: kitchen set bawah (top table + kolom laci), kabinet gantung (terpasang 145 cm dari lantai)
    - Ruang makan: meja makan, kursi makan (dudukan berjok), bangku
    - Kerja & komersial: meja kerja, meja bar kafe, meja resepsionis
-2. **Konfigurator**: slider ukuran (langkah 5 cm), material, warna, aksen handle/kaki.
+2. **Konfigurator**: slider ukuran (langkah 5 cm) atau ketuk angka cm untuk mengetik
+   ukuran persis, lalu material, warna, aksen handle/kaki.
    Pratinjau 3D dan harga berubah seketika. Ada gambar kerja (tampak depan dan samping)
    dan rincian biaya.
 3. **Lihat di ruangan (AR)**: tombol di pratinjau 3D untuk melihat satu item cepat
@@ -44,9 +48,13 @@ flutter test
   Tidak perlu file 3D dari desainer untuk tiap ukuran/warna.
 - `lib/widgets/model_preview.dart` menampilkan GLB lewat `model_viewer_plus`;
   setiap perubahan pilihan menulis ulang file dan memuat ulang pratinjau.
+- Kitchen set, lemari, dan backdrop menampilkan **harga per meter lari** (total ÷
+  panjang; kitchen set L memakai sisi A + sisi B). Rincian bahan ditulis sebagai
+  luas panel × harga/m².
 - `lib/pricing/price_calculator.dart` menghitung harga dari luas panel yang sama
   dengan model 3D: bahan (+15% sisa potong), aksen per pcs, engsel/rel laci,
-  kaca/cermin dan jok kain per m², ongkos kerja dasar + 25% biaya bahan,
+  kaca/cermin, jok kain, dan top table solid surface per m², LED per meter,
+  set pintu geser per pintu, ongkos kerja dasar + 25% biaya bahan,
   dibulatkan ke Rp 10.000.
 
 ## Menyesuaikan data

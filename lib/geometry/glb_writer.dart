@@ -12,6 +12,7 @@ class GlbMaterial {
     this.metallic = 0,
     this.roughness = 0.5,
     this.alpha = 1,
+    this.emissive = false,
   });
 
   final String name;
@@ -21,6 +22,9 @@ class GlbMaterial {
 
   /// Di bawah 1 berarti tembus pandang (kaca).
   final double alpha;
+
+  /// Bercahaya sendiri (lampu LED), tidak terpengaruh pencahayaan.
+  final bool emissive;
 
   /// glTF menyimpan baseColorFactor dalam ruang warna linear.
   List<double> get linearColor => [
@@ -134,6 +138,8 @@ Uint8List writeGlb(List<Part> parts, Map<PartSlot, GlbMaterial> materials) {
         'roughnessFactor': material.roughness,
       },
       if (material.alpha < 1) 'alphaMode': 'BLEND',
+      if (material.emissive)
+        'emissiveFactor': material.linearColor.sublist(0, 3),
     });
     final a = accessors.length;
     primitives.add({
