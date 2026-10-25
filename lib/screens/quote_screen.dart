@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../state/quote_store.dart';
 import '../utils/currency.dart';
+import 'room_ar_screen.dart';
 
 class QuoteScreen extends StatelessWidget {
   const QuoteScreen({super.key});
@@ -12,7 +13,16 @@ class QuoteScreen extends StatelessWidget {
     final store = QuoteScope.of(context);
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Penawaran')),
+      appBar: AppBar(
+        title: const Text('Penawaran'),
+        actions: [
+          IconButton(
+            tooltip: 'Tata di ruangan (AR)',
+            onPressed: store.items.isEmpty ? null : () => openRoomAr(context),
+            icon: const Icon(Icons.view_in_ar),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

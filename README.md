@@ -25,9 +25,15 @@ flutter test
 2. **Konfigurator**: slider ukuran (langkah 5 cm), material, warna, aksen handle/kaki.
    Pratinjau 3D dan harga berubah seketika. Ada gambar kerja (tampak depan dan samping)
    dan rincian biaya.
-3. **Lihat di ruangan (AR)**: tombol di pratinjau 3D. Skala dikunci 1:1 dan model
-   diletakkan di lantai.
-4. **Penawaran**: kumpulkan beberapa item, isi nama client dan ruangan, lalu
+3. **Lihat di ruangan (AR)**: tombol di pratinjau 3D untuk melihat satu item cepat
+   (Scene Viewer). Skala dikunci 1:1 dan model diletakkan di lantai.
+4. **Tata Ruangan (AR)**: ikon AR di katalog/penawaran, atau "Tata di AR" setelah
+   menambah item. Pilih item di baki bawah lalu ketuk lantai; ulangi untuk item
+   berikutnya, item yang sudah ditaruh tetap ada. Geser satu jari untuk memindah,
+   putar dua jari untuk memutar, ketuk item untuk memilih lalu "Hapus". Tombol
+   "Tambah" membuka katalog dan kembali ke ruangan tanpa menghapus susunan.
+   Banner atas menampilkan jumlah item dan total harga yang ada di ruangan.
+5. **Penawaran**: kumpulkan beberapa item, isi nama client dan ruangan, lalu
    "Salin ringkasan" untuk ditempel ke WhatsApp.
 
 ## Cara kerjanya
@@ -50,6 +56,11 @@ Semua harga, material, warna, dan rentang ukuran ada di
 masih **mock** dan perlu diganti dengan daftar harga workshop.
 
 ## Batasan prototype
+
+- **Tata Ruangan (AR)** memakai `ar_flutter_plugin_plus` (ARCore di Android, ARKit di
+  iOS 15+). Menurut plugin, ARCore di sebagian HP Android melacak lebih stabil bila
+  aplikasi dibangun non-debuggable (`flutter run --release`). Susunan belum tersimpan
+  setelah layar AR ditutup.
 
 - **Android**: AR memakai Google Scene Viewer (perlu HP yang mendukung ARCore dan
   aplikasi Google). Client masih bisa mencubit untuk mengubah skala di Scene Viewer;
