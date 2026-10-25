@@ -12,6 +12,12 @@ enum PartSlot {
   glass,
   mirror,
   fabric,
+
+  /// Top table solid surface / batu.
+  stone,
+
+  /// Strip lampu LED.
+  light,
 }
 
 /// Satu komponen berbentuk balok, koordinat dalam meter.
@@ -47,13 +53,28 @@ class Part {
 }
 
 class FurnitureModel {
-  const FurnitureModel({required this.parts, this.doors = 0, this.drawers = 0});
+  const FurnitureModel({
+    required this.parts,
+    this.doors = 0,
+    this.drawers = 0,
+    this.slidingDoors = 0,
+  });
 
   final List<Part> parts;
+
+  /// Pintu ayun (pakai engsel).
   final int doors;
   final int drawers;
 
+  /// Pintu geser (pakai set rel).
+  final int slidingDoors;
+
   int get accentCount => parts.where((p) => p.slot == PartSlot.accent).length;
+
+  /// Total panjang (m) komponen pada satu slot, mis. strip LED.
+  double lengthOf(PartSlot slot) => parts
+      .where((p) => p.slot == slot)
+      .fold(0, (sum, p) => sum + math.max(p.sx, math.max(p.sy, p.sz)));
 
   /// Total luas lembaran (m²) untuk satu slot.
   double areaOf(PartSlot slot) =>
@@ -86,6 +107,11 @@ FurnitureModel buildFurniture(FurnitureConfig config) {
     FurnitureKind.bangku => _bangku(w, d, h),
     FurnitureKind.mejaBar => _mejaBar(w, d, h),
     FurnitureKind.mejaResepsionis => _mejaResepsionis(w, d, h),
+    FurnitureKind.kitchenL => _kitchenL(w, d, h),
+    FurnitureKind.kitchenLengkap => _kitchenLengkap(w, d, h),
+    FurnitureKind.kitchenIsland => _kitchenIsland(w, d, h),
+    FurnitureKind.lemariSliding => _lemariSliding(w, d, h),
+    FurnitureKind.lemariDisplay => _lemariDisplay(w, d, h),
   };
 }
 
@@ -710,65 +736,8 @@ FurnitureModel _rakSepatu(double w, double d, double h) {
   return FurnitureModel(parts: parts, doors: doors);
 }
 
-FurnitureModel _kitchenBawah(double w, double d, double h) {
-  const plinth = 0.1;
-  const topT = 0.03;
-  final front = d / 2 - _t;
-  final carcassTop = h - topT;
-  final cols = math.max(2, (w / 0.5).round());
-  final colW = w / cols;
-  final parts = <Part>[
-    ..._carcass(w, d, plinth, carcassTop, front),
-    Part(
-      'Plint',
-      -w / 2 + _t,
-      w / 2 - _t,
-      0,
-      plinth,
-      front - 0.05 - _t,
-      front - 0.05,
-    ),
-    Part('Top table', -w / 2, w / 2, carcassTop, h, -d / 2, d / 2 + 0.02),
-  ];
-  for (var i = 1; i < cols; i++) {
-    final x = -w / 2 + i * colW;
-    parts.add(
-      Part(
-        'Sekat',
-        x - _t / 2,
-        x + _t / 2,
-        plinth + _t,
-        carcassTop - _t,
-        -d / 2 + 0.006,
-        front,
-      ),
-    );
-  }
-  // Kolom paling kiri berisi tiga laci, sisanya pintu.
-  const drawers = 3;
-  final drawerH = (carcassTop - plinth) / drawers;
-  final dx0 = -w / 2 + _gap / 2;
-  final dx1 = -w / 2 + colW - _gap / 2;
-  for (var i = 0; i < drawers; i++) {
-    final y0 = plinth + i * drawerH + _gap / 2;
-    final y1 = y0 + drawerH - _gap;
-    parts
-      ..add(Part('Laci ${i + 1}', dx0, dx1, y0, y1, front, d / 2))
-      ..add(_horizontalHandle((dx0 + dx1) / 2, y1 - 0.04, d / 2));
-  }
-  parts.addAll(
-    _doorRow(
-      x0: -w / 2 + colW,
-      x1: w / 2,
-      y0: plinth,
-      y1: carcassTop,
-      front: front,
-      face: d / 2,
-      count: cols - 1,
-    ),
-  );
-  return FurnitureModel(parts: parts, doors: cols - 1, drawers: drawers);
-}
+FurnitureModel _kitchenBawah(double w, double d, double h) =>
+    _lowerRun(w, d, h, drawerColumn: 0);
 
 /// Tinggi bawah kabinet gantung dapur dari lantai (meter), standar 145 cm.
 const kitchenWallMountM = 1.45;
@@ -937,4 +906,492 @@ FurnitureModel _mejaResepsionis(double w, double d, double h) {
       );
   }
   return FurnitureModel(parts: parts, drawers: drawers);
+}
+
+/// Memindah komponen dan memutarnya kelipatan 90° terhadap sumbu Y.
+/// [quarterTurns] 1 membuat sisi depan lokal (+Z) menghadap +X.
+List<Part> _place(
+  List<Part> parts, {
+  int quarterTurns = 0,
+  double dx = 0,
+  double dz = 0,
+}) {
+  (double, double) rotate(double x, double z) => switch (quarterTurns % 4) {
+    0 => (x, z),
+    1 => (z, -x),
+    2 => (-x, -z),
+    _ => (-z, x),
+  };
+  return [
+    for (final p in parts)
+      () {
+        final (ax, az) = rotate(p.x0, p.z0);
+        final (bx, bz) = rotate(p.x1, p.z1);
+        return Part(
+          p.name,
+          math.min(ax, bx) + dx,
+          math.max(ax, bx) + dx,
+          p.y0,
+          p.y1,
+          math.min(az, bz) + dz,
+          math.max(az, bz) + dz,
+          slot: p.slot,
+        );
+      }(),
+  ];
+}
+
+/// Deretan kabinet bawah dapur sepanjang [len], berpusat di x = 0 dengan
+/// punggung di z = -d/2. Top table solid surface dan handle profil panjang.
+/// [drawerColumn] adalah indeks kolom yang berisi tiga laci (null: tanpa laci).
+FurnitureModel _lowerRun(double len, double d, double h, {int? drawerColumn}) {
+  const plinth = 0.1;
+  const topT = 0.03;
+  final front = d / 2 - _t;
+  final carcassTop = h - topT;
+  final cols = math.max(1, (len / 0.5).round());
+  final colW = len / cols;
+  final parts = <Part>[
+    ..._carcass(len, d, plinth, carcassTop, front),
+    Part(
+      'Plint',
+      -len / 2 + _t,
+      len / 2 - _t,
+      0,
+      plinth,
+      front - 0.05 - _t,
+      front - 0.05,
+    ),
+    Part(
+      'Top table',
+      -len / 2,
+      len / 2,
+      carcassTop,
+      h,
+      -d / 2,
+      d / 2 + 0.02,
+      slot: PartSlot.stone,
+    ),
+  ];
+  for (var i = 1; i < cols; i++) {
+    final x = -len / 2 + i * colW;
+    parts.add(
+      Part(
+        'Sekat',
+        x - _t / 2,
+        x + _t / 2,
+        plinth + _t,
+        carcassTop - _t,
+        -d / 2 + 0.006,
+        front,
+      ),
+    );
+  }
+  var doors = 0;
+  var drawers = 0;
+  for (var i = 0; i < cols; i++) {
+    final x0 = -len / 2 + i * colW + _gap / 2;
+    final x1 = x0 + colW - _gap;
+    final handleLen = (x1 - x0) * 0.8;
+    if (i == drawerColumn && cols > 1) {
+      const n = 3;
+      final drawerH = (carcassTop - plinth) / n;
+      for (var k = 0; k < n; k++) {
+        final y0 = plinth + k * drawerH + _gap / 2;
+        final y1 = y0 + drawerH - _gap;
+        parts
+          ..add(Part('Laci', x0, x1, y0, y1, front, d / 2))
+          ..add(_horizontalHandle((x0 + x1) / 2, y1 - 0.02, d / 2, handleLen));
+        drawers++;
+      }
+    } else {
+      parts
+        ..add(Part('Pintu', x0, x1, plinth, carcassTop, front, d / 2))
+        ..add(
+          _horizontalHandle((x0 + x1) / 2, carcassTop - 0.02, d / 2, handleLen),
+        );
+      doors++;
+    }
+  }
+  return FurnitureModel(parts: parts, doors: doors, drawers: drawers);
+}
+
+/// Kabinet atas dapur antara [y0] dan [y1], punggung di z = -d/2.
+/// Kolom terakhir dibiarkan terbuka sebagai rak pajangan, dan ada strip LED
+/// di bawahnya untuk menerangi meja kerja.
+FurnitureModel _upperRun(double len, double d, double y0, double y1) {
+  final front = d / 2 - _t;
+  final cols = math.max(2, (len / 0.5).round());
+  final colW = len / cols;
+  final parts = <Part>[
+    ..._carcass(len, d, y0, y1, front),
+    Part(
+      'LED bawah kabinet',
+      -len / 2 + 0.02,
+      len / 2 - 0.02,
+      y0 - 0.008,
+      y0,
+      d / 2 - 0.06,
+      d / 2 - 0.04,
+      slot: PartSlot.light,
+    ),
+  ];
+  for (var i = 1; i < cols; i++) {
+    final x = -len / 2 + i * colW;
+    parts.add(
+      Part(
+        'Sekat',
+        x - _t / 2,
+        x + _t / 2,
+        y0 + _t,
+        y1 - _t,
+        -d / 2 + 0.006,
+        front,
+      ),
+    );
+  }
+  var doors = 0;
+  for (var i = 0; i < cols; i++) {
+    final x0 = -len / 2 + i * colW + _gap / 2;
+    final x1 = x0 + colW - _gap;
+    if (i == cols - 1) {
+      // Rak terbuka: dua ambalan tanpa pintu.
+      for (final f in [1 / 3, 2 / 3]) {
+        final y = y0 + (y1 - y0) * f;
+        parts.add(
+          Part('Rak terbuka', x0, x1, y, y + _t, -d / 2 + 0.006, front),
+        );
+      }
+      continue;
+    }
+    parts
+      ..add(Part('Pintu atas', x0, x1, y0, y1, front, d / 2))
+      ..add(
+        _horizontalHandle((x0 + x1) / 2, y0 + 0.02, d / 2, (x1 - x0) * 0.8),
+      );
+    doors++;
+  }
+  return FurnitureModel(parts: parts, doors: doors);
+}
+
+FurnitureModel _kitchenL(double w, double d, double h) {
+  // w = sisi A (menempel dinding belakang), d = sisi B (dinding kiri).
+  const depth = 0.6;
+  final runA = _lowerRun(w, depth, h, drawerColumn: (w / 0.5).round() - 1);
+  // Sisi B mulai setelah top table sisi A agar tidak bertumpuk di sudut.
+  final lenB = d - depth - 0.02;
+  final runB = _lowerRun(lenB, depth, h, drawerColumn: 0);
+  return FurnitureModel(
+    parts: [
+      ..._place(runA.parts, dz: -d / 2 + depth / 2),
+      ..._place(
+        runB.parts,
+        quarterTurns: 1,
+        dx: -w / 2 + depth / 2,
+        dz: (-d / 2 + depth + 0.02 + d / 2) / 2,
+      ),
+    ],
+    doors: runA.doors + runB.doors,
+    drawers: runA.drawers + runB.drawers,
+  );
+}
+
+FurnitureModel _kitchenLengkap(double w, double d, double h) {
+  // d = kedalaman kabinet bawah; h = tinggi sampai atas kabinet atas.
+  const lowerH = 0.9;
+  const upperY0 = 1.45;
+  const upperD = 0.35;
+  final lower = _lowerRun(w, d, lowerH, drawerColumn: 0);
+  final upper = _upperRun(w, upperD, upperY0, h);
+  return FurnitureModel(
+    parts: [
+      ...lower.parts,
+      Part(
+        'Backsplash',
+        -w / 2,
+        w / 2,
+        lowerH,
+        upperY0,
+        -d / 2,
+        -d / 2 + 0.012,
+        slot: PartSlot.stone,
+      ),
+      ..._place(upper.parts, dz: -d / 2 + upperD / 2),
+    ],
+    doors: lower.doors + upper.doors,
+    drawers: lower.drawers,
+  );
+}
+
+FurnitureModel _kitchenIsland(double w, double d, double h) {
+  const topT = 0.03;
+  const side = 0.03;
+  const barOverhang = 0.3;
+  const plinth = 0.1;
+  final wi = w - 2 * side;
+  final dc = math.max(0.5, d - barOverhang);
+  final front = dc / 2 - _t;
+  final cabTop = h - topT;
+  // Badan laci dibangun menghadap +Z lalu diputar 180° agar laci menghadap
+  // area masak; sisi +Z menjadi area bar dengan overhang untuk kursi.
+  final cabinet = <Part>[
+    ..._carcass(wi, dc, plinth, cabTop, front),
+    Part(
+      'Plint',
+      -wi / 2 + _t,
+      wi / 2 - _t,
+      0,
+      plinth,
+      front - 0.05 - _t,
+      front - 0.05,
+    ),
+  ];
+  final cols = math.max(1, (wi / 0.6).round());
+  final colW = wi / cols;
+  const rows = 2;
+  final rowH = (cabTop - plinth) / rows;
+  for (var i = 0; i < cols; i++) {
+    final x0 = -wi / 2 + i * colW + _gap / 2;
+    final x1 = x0 + colW - _gap;
+    for (var r = 0; r < rows; r++) {
+      final y0 = plinth + r * rowH + _gap / 2;
+      final y1 = y0 + rowH - _gap;
+      cabinet
+        ..add(Part('Laci', x0, x1, y0, y1, front, dc / 2))
+        ..add(
+          _horizontalHandle((x0 + x1) / 2, y1 - 0.02, dc / 2, (x1 - x0) * 0.8),
+        );
+    }
+  }
+  return FurnitureModel(
+    parts: [
+      Part(
+        'Top waterfall',
+        -w / 2,
+        w / 2,
+        cabTop,
+        h,
+        -d / 2,
+        d / 2,
+        slot: PartSlot.stone,
+      ),
+      Part(
+        'Sisi waterfall kiri',
+        -w / 2,
+        -w / 2 + side,
+        0,
+        cabTop,
+        -d / 2,
+        d / 2,
+        slot: PartSlot.stone,
+      ),
+      Part(
+        'Sisi waterfall kanan',
+        w / 2 - side,
+        w / 2,
+        0,
+        cabTop,
+        -d / 2,
+        d / 2,
+        slot: PartSlot.stone,
+      ),
+      ..._place(cabinet, quarterTurns: 2, dz: -d / 2 + dc / 2),
+    ],
+    drawers: cols * rows,
+  );
+}
+
+FurnitureModel _lemariSliding(double w, double d, double h) {
+  const plinth = 0.08;
+  const railH = 0.04;
+  const overlap = 0.03;
+  // 6 cm di depan badan untuk dua jalur rel pintu.
+  final front = d / 2 - 0.06;
+  final parts = <Part>[
+    ..._carcass(w, d, plinth, h, front),
+    Part(
+      'Plint',
+      -w / 2 + _t,
+      w / 2 - _t,
+      0,
+      plinth,
+      front - 0.03 - _t,
+      front - 0.03,
+    ),
+    ..._shelves(w, d, plinth + _t, h - _t, front, 5),
+    Part(
+      'Rel atas',
+      -w / 2,
+      w / 2,
+      h - railH,
+      h,
+      front,
+      d / 2,
+      slot: PartSlot.accent,
+    ),
+    Part(
+      'Rel bawah',
+      -w / 2,
+      w / 2,
+      plinth,
+      plinth + 0.02,
+      front,
+      d / 2,
+      slot: PartSlot.accent,
+    ),
+  ];
+  final dividers = math.max(0, (w / 1.0).round() - 1);
+  for (var i = 1; i <= dividers; i++) {
+    final x = -w / 2 + i * w / (dividers + 1);
+    parts.add(
+      Part(
+        'Sekat',
+        x - _t / 2,
+        x + _t / 2,
+        plinth + _t,
+        h - _t,
+        -d / 2 + 0.006,
+        front,
+      ),
+    );
+  }
+  final n = math.max(2, (w / 1.0).round());
+  final doorW = (w + (n - 1) * overlap) / n;
+  for (var i = 0; i < n; i++) {
+    final x0 = -w / 2 + i * (doorW - overlap);
+    final x1 = x0 + doorW;
+    // Pintu bergantian di jalur belakang dan depan agar bisa saling melewati.
+    final z0 = i.isEven ? front + 0.005 : front + 0.03;
+    final z1 = z0 + 0.02;
+    parts
+      ..add(
+        Part('Pintu geser ${i + 1}', x0, x1, plinth + 0.02, h - railH, z0, z1),
+      )
+      ..add(
+        Part(
+          'Profil pintu',
+          x1 - 0.012,
+          x1,
+          plinth + 0.02,
+          h - railH,
+          z1,
+          z1 + 0.008,
+          slot: PartSlot.accent,
+        ),
+      );
+    if (i == n ~/ 2) {
+      parts.add(
+        Part(
+          'Cermin',
+          x0 + 0.06,
+          x1 - 0.06,
+          plinth + 0.15,
+          h - railH - 0.15,
+          z1,
+          z1 + 0.004,
+          slot: PartSlot.mirror,
+        ),
+      );
+    }
+  }
+  return FurnitureModel(parts: parts, slidingDoors: n);
+}
+
+FurnitureModel _lemariDisplay(double w, double d, double h) {
+  const plinth = 0.08;
+  final front = d / 2 - _t;
+  final cols = math.max(3, (w / 0.5).round());
+  final colW = w / cols;
+  final openCol = cols ~/ 2;
+  final parts = <Part>[
+    ..._carcass(w, d, plinth, h, front),
+    Part(
+      'Plint',
+      -w / 2 + _t,
+      w / 2 - _t,
+      0,
+      plinth,
+      front - 0.03 - _t,
+      front - 0.03,
+    ),
+  ];
+  for (var i = 1; i < cols; i++) {
+    final x = -w / 2 + i * colW;
+    parts.add(
+      Part(
+        'Sekat',
+        x - _t / 2,
+        x + _t / 2,
+        plinth + _t,
+        h - _t,
+        -d / 2 + 0.006,
+        front,
+      ),
+    );
+  }
+  var doors = 0;
+  for (var i = 0; i < cols; i++) {
+    final x0 = -w / 2 + i * colW + _gap / 2;
+    final x1 = x0 + colW - _gap;
+    if (i == openCol) {
+      // Kolom display: ambalan kaca dan LED vertikal di kedua sisi.
+      final ix0 = x0 + _t / 2;
+      final ix1 = x1 - _t / 2;
+      for (var k = 1; k <= 4; k++) {
+        final y = plinth + (h - plinth) * k / 5;
+        parts.add(
+          Part(
+            'Ambalan kaca',
+            ix0,
+            ix1,
+            y,
+            y + 0.008,
+            -d / 2 + 0.006,
+            front - 0.02,
+            slot: PartSlot.glass,
+          ),
+        );
+      }
+      for (final x in [ix0, ix1 - 0.01]) {
+        parts.add(
+          Part(
+            'LED display',
+            x,
+            x + 0.01,
+            plinth + _t,
+            h - _t,
+            front - 0.03,
+            front - 0.02,
+            slot: PartSlot.light,
+          ),
+        );
+      }
+      continue;
+    }
+    doors++;
+    parts.add(Part('Pintu fluted', x0, x1, plinth, h, front, d / 2));
+    // Alur fluted: bilah vertikal tipis setiap 3 cm.
+    const pitch = 0.03;
+    final flutes = ((x1 - x0 - 0.02) / pitch).floor();
+    final start = (x0 + x1) / 2 - (flutes - 1) * pitch / 2;
+    for (var k = 0; k < flutes; k++) {
+      final cx = start + k * pitch;
+      parts.add(
+        Part(
+          'Fluted',
+          cx - 0.0075,
+          cx + 0.0075,
+          plinth + 0.02,
+          h - 0.02,
+          d / 2,
+          d / 2 + 0.006,
+        ),
+      );
+    }
+    final handleX = i < openCol ? x1 - 0.03 : x0 + 0.03;
+    parts.add(
+      _verticalHandle(handleX, math.min(1.05, (plinth + h) / 2), d / 2 + 0.006),
+    );
+  }
+  return FurnitureModel(parts: parts, doors: doors);
 }

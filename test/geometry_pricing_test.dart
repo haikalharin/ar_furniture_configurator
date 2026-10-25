@@ -91,6 +91,44 @@ void main() {
     expect(kursi.upholstery, greaterThan(0));
   });
 
+  FurnitureConfig initialOf(FurnitureKind k) =>
+      FurnitureConfig.initial(Catalog.furniture.firstWhere((t) => t.kind == k));
+
+  test('kitchen set L memakai sisi B sebagai kedalaman total', () {
+    final config = initialOf(FurnitureKind.kitchenL);
+    final parts = buildFurniture(config).parts;
+    final z0 = parts.map((p) => p.z0).reduce((a, b) => a < b ? a : b);
+    final z1 = parts.map((p) => p.z1).reduce((a, b) => a > b ? a : b);
+    expect(z1 - z0, closeTo(config.depthCm / 100, 1e-6));
+    expect(config.runLengthM, (config.widthCm + config.depthCm) / 100);
+  });
+
+  test('top table, LED, dan pintu geser ikut dihitung', () {
+    final lengkap = estimatePrice(initialOf(FurnitureKind.kitchenLengkap));
+    expect(lengkap.stone, greaterThan(0));
+    expect(lengkap.lighting, greaterThan(0));
+    final sliding = initialOf(FurnitureKind.lemariSliding);
+    final model = buildFurniture(sliding);
+    expect(model.slidingDoors, greaterThanOrEqualTo(2));
+    expect(
+      estimatePrice(sliding).hardware,
+      model.slidingDoors * PricingRules.slidingSetPerDoor,
+    );
+  });
+
+  test('harga per meter lari = total / panjang, ikut membesar/mengecil', () {
+    final base = initialOf(FurnitureKind.lemariDisplay);
+    final p = estimatePrice(base);
+    expect(
+      p.perMeterRun,
+      closeTo(p.total / (base.widthCm / 100), PricingRules.roundTo),
+    );
+    final wider = estimatePrice(base.copyWith(widthCm: 400));
+    final narrower = estimatePrice(base.copyWith(widthCm: 160));
+    expect(wider.total, greaterThan(p.total));
+    expect(narrower.total, lessThan(p.total));
+  });
+
   test('setiap jenis furnitur ada di katalog tepat satu kali', () {
     final kinds = Catalog.furniture.map((t) => t.kind).toList();
     expect(kinds.toSet(), FurnitureKind.values.toSet());

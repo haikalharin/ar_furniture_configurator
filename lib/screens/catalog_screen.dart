@@ -107,7 +107,7 @@ class _FurnitureCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final startPrice = estimatePrice(FurnitureConfig.initial(type)).total;
+    final start = estimatePrice(FurnitureConfig.initial(type));
     return Card.filled(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -122,12 +122,38 @@ class _FurnitureCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Center(
-                  child: Icon(
-                    type.icon,
-                    size: 56,
-                    color: theme.colorScheme.primary,
-                  ),
+                child: Stack(
+                  children: [
+                    Center(
+                      child: Icon(
+                        type.icon,
+                        size: 56,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    if (type.tag != null)
+                      Align(
+                        alignment: Alignment.topRight,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.tertiaryContainer,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            child: Text(
+                              type.tag!,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.onTertiaryContainer,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
               Text(type.name, style: theme.textTheme.titleMedium),
@@ -140,7 +166,9 @@ class _FurnitureCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'mulai ${formatRupiah(startPrice)}',
+                type.pricedPerMeter
+                    ? '≈ ${formatRupiah(start.perMeterRun)}/m lari'
+                    : 'mulai ${formatRupiah(start.total)}',
                 style: theme.textTheme.labelLarge?.copyWith(
                   color: theme.colorScheme.primary,
                 ),

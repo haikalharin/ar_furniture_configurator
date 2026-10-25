@@ -28,6 +28,16 @@ Map<PartSlot, GlbMaterial> slotMaterials(FurnitureConfig config) => {
     metallic: 1,
     roughness: 0.12,
   ),
+  PartSlot.stone: const GlbMaterial(
+    name: 'Solid surface',
+    rgbHex: 0xEDEBE6,
+    roughness: 0.25,
+  ),
+  PartSlot.light: const GlbMaterial(
+    name: 'LED warm white',
+    rgbHex: 0xFFE2B0,
+    emissive: true,
+  ),
   PartSlot.fabric: const GlbMaterial(
     name: 'Jok kain',
     rgbHex: 0xB9B2A6,

@@ -28,6 +28,11 @@ enum FurnitureKind {
   mejaKerja,
   mejaBar,
   mejaResepsionis,
+  kitchenL,
+  kitchenLengkap,
+  kitchenIsland,
+  lemariSliding,
+  lemariDisplay,
 }
 
 enum FurnitureCategory {
@@ -53,6 +58,11 @@ class FurnitureType {
     required this.depth,
     required this.height,
     required this.baseLabor,
+    this.widthLabel = 'Lebar',
+    this.depthLabel = 'Dalam',
+    this.heightLabel = 'Tinggi',
+    this.tag,
+    this.pricedPerMeter = false,
   });
 
   final FurnitureKind kind;
@@ -66,6 +76,16 @@ class FurnitureType {
 
   /// Ongkos kerja dasar per unit (Rupiah), sebelum porsi persentase.
   final int baseLabor;
+
+  final String widthLabel;
+  final String depthLabel;
+  final String heightLabel;
+
+  /// Label kecil di kartu katalog, mis. 'Estetik'.
+  final String? tag;
+
+  /// Kitchen set dan lemari biasa ditawarkan per meter lari.
+  final bool pricedPerMeter;
 }
 
 class MaterialOption {
@@ -132,6 +152,7 @@ class Catalog {
       depth: DimensionRange(50, 65, 60),
       height: DimensionRange(180, 260, 210),
       baseLabor: 1000000,
+      pricedPerMeter: true,
     ),
     FurnitureType(
       kind: FurnitureKind.tempatTidur,
@@ -188,6 +209,7 @@ class Catalog {
       depth: DimensionRange(30, 45, 35),
       height: DimensionRange(200, 280, 240),
       baseLabor: 1500000,
+      pricedPerMeter: true,
     ),
     FurnitureType(
       kind: FurnitureKind.mejaKopi,
@@ -244,6 +266,7 @@ class Catalog {
       depth: DimensionRange(55, 65, 60),
       height: DimensionRange(85, 95, 90),
       baseLabor: 1500000,
+      pricedPerMeter: true,
     ),
     FurnitureType(
       kind: FurnitureKind.kabinetGantung,
@@ -255,6 +278,7 @@ class Catalog {
       depth: DimensionRange(30, 40, 35),
       height: DimensionRange(60, 90, 70),
       baseLabor: 1000000,
+      pricedPerMeter: true,
     ),
     // Ruang makan
     FurnitureType(
@@ -323,6 +347,75 @@ class Catalog {
       depth: DimensionRange(60, 80, 70),
       height: DimensionRange(100, 115, 110),
       baseLabor: 1500000,
+    ),
+    // Koleksi estetik: kitchen set & lemari custom
+    FurnitureType(
+      kind: FurnitureKind.kitchenL,
+      category: FurnitureCategory.dapur,
+      name: 'Kitchen Set L',
+      description: 'Kabinet bawah bentuk L, top solid surface, handle profil',
+      icon: Icons.countertops,
+      width: DimensionRange(150, 450, 260),
+      depth: DimensionRange(120, 350, 180),
+      height: DimensionRange(85, 95, 90),
+      baseLabor: 2000000,
+      widthLabel: 'Sisi A',
+      depthLabel: 'Sisi B',
+      tag: 'Estetik',
+      pricedPerMeter: true,
+    ),
+    FurnitureType(
+      kind: FurnitureKind.kitchenLengkap,
+      category: FurnitureCategory.dapur,
+      name: 'Kitchen Set Lengkap',
+      description: 'Atas + bawah, backsplash, rak terbuka, lampu LED',
+      icon: Icons.kitchen,
+      width: DimensionRange(150, 600, 300),
+      depth: DimensionRange(55, 65, 60),
+      height: DimensionRange(200, 250, 220),
+      baseLabor: 3000000,
+      heightLabel: 'Tinggi total',
+      tag: 'Estetik',
+      pricedPerMeter: true,
+    ),
+    FurnitureType(
+      kind: FurnitureKind.kitchenIsland,
+      category: FurnitureCategory.dapur,
+      name: 'Kitchen Island',
+      description: 'Island waterfall dengan laci dan sisi bar',
+      icon: Icons.table_bar_outlined,
+      width: DimensionRange(120, 300, 180),
+      depth: DimensionRange(80, 120, 90),
+      height: DimensionRange(88, 95, 90),
+      baseLabor: 2000000,
+      tag: 'Estetik',
+      pricedPerMeter: true,
+    ),
+    FurnitureType(
+      kind: FurnitureKind.lemariSliding,
+      category: FurnitureCategory.kamar,
+      name: 'Lemari Sliding Cermin',
+      description: 'Pintu geser dengan panel cermin dan rel aluminium',
+      icon: Icons.view_week_outlined,
+      width: DimensionRange(120, 400, 200),
+      depth: DimensionRange(60, 70, 62),
+      height: DimensionRange(200, 280, 240),
+      baseLabor: 1800000,
+      tag: 'Estetik',
+      pricedPerMeter: true,
+    ),
+    FurnitureType(
+      kind: FurnitureKind.lemariDisplay,
+      category: FurnitureCategory.kamar,
+      name: 'Lemari Fluted + Display',
+      description: 'Pintu fluted, kolom display kaca dengan lampu LED',
+      icon: Icons.view_column_outlined,
+      width: DimensionRange(160, 400, 240),
+      depth: DimensionRange(55, 65, 60),
+      height: DimensionRange(200, 280, 240),
+      baseLabor: 2200000,
+      tag: 'Estetik',
+      pricedPerMeter: true,
     ),
   ];
 
