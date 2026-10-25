@@ -16,7 +16,12 @@ flutter test
 
 ## Alur di aplikasi
 
-1. **Pilih Furnitur**: lemari pakaian, bufet TV, rak buku, meja kerja, meja makan, nakas.
+1. **Pilih Furnitur**: 18 item dengan filter kategori ruangan.
+   - Kamar tidur: lemari pakaian, tempat tidur (headboard berjok), nakas, meja rias (dengan cermin)
+   - Ruang tamu: bufet TV, backdrop TV, meja kopi, rak buku, lemari pajangan (pintu kaca), rak sepatu
+   - Dapur: kitchen set bawah (top table + kolom laci), kabinet gantung (terpasang 145 cm dari lantai)
+   - Ruang makan: meja makan, kursi makan (dudukan berjok), bangku
+   - Kerja & komersial: meja kerja, meja bar kafe, meja resepsionis
 2. **Konfigurator**: slider ukuran (langkah 5 cm), material, warna, aksen handle/kaki.
    Pratinjau 3D dan harga berubah seketika. Ada gambar kerja (tampak depan dan samping)
    dan rincian biaya.
@@ -35,7 +40,8 @@ flutter test
   setiap perubahan pilihan menulis ulang file dan memuat ulang pratinjau.
 - `lib/pricing/price_calculator.dart` menghitung harga dari luas panel yang sama
   dengan model 3D: bahan (+15% sisa potong), aksen per pcs, engsel/rel laci,
-  ongkos kerja dasar + 25% biaya bahan, dibulatkan ke Rp 10.000.
+  kaca/cermin dan jok kain per m², ongkos kerja dasar + 25% biaya bahan,
+  dibulatkan ke Rp 10.000.
 
 ## Menyesuaikan data
 
@@ -51,6 +57,7 @@ masih **mock** dan perlu diganti dengan daftar harga workshop.
 - **iOS**: AR Quick Look umumnya tidak bisa dibuka dari dalam WebView, jadi tombol
   AR di iPhone kemungkinan belum berfungsi. Langkah berikutnya: ekspor USDZ dan buka
   dengan `QLPreviewController` lewat platform channel, atau pakai plugin ARKit.
-- Material masih berupa warna polos (tanpa tekstur serat kayu).
+- Material masih berupa warna polos (tanpa tekstur serat kayu). Warna kaca,
+  cermin, dan kain jok masih tetap (belum bisa dipilih).
 - Belum diuji di perangkat fisik; logika model, GLB, dan harga sudah diuji otomatis
   dan file GLB lolos Khronos glTF Validator.

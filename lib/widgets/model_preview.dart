@@ -8,6 +8,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 import '../geometry/furniture_builder.dart';
 import '../geometry/glb_writer.dart';
+import '../geometry/slot_materials.dart';
 import '../models/configuration.dart';
 
 /// Pratinjau 3D + tombol AR untuk konfigurasi yang sedang dipilih.
@@ -65,19 +66,7 @@ class _ModelPreviewState extends State<ModelPreview> {
   }
 
   static Future<void> _write(File file, FurnitureConfig config) async {
-    final bytes = writeGlb(buildFurniture(config).parts, {
-      PartSlot.body: GlbMaterial(
-        name: '${config.material.name} ${config.color.name}',
-        rgbHex: config.color.hex,
-        roughness: config.material.roughness,
-      ),
-      PartSlot.accent: GlbMaterial(
-        name: config.accent.name,
-        rgbHex: config.accent.hex,
-        metallic: config.accent.metallic,
-        roughness: config.accent.roughness,
-      ),
-    });
+    final bytes = writeGlb(buildFurniture(config).parts, slotMaterials(config));
     // Tulis ke file sementara lalu rename agar viewer tidak membaca file setengah jadi.
     final tmp = File('${file.path}.tmp');
     await tmp.writeAsBytes(bytes, flush: true);

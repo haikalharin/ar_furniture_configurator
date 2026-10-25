@@ -11,6 +11,7 @@ class GlbMaterial {
     required this.rgbHex,
     this.metallic = 0,
     this.roughness = 0.5,
+    this.alpha = 1,
   });
 
   final String name;
@@ -18,11 +19,14 @@ class GlbMaterial {
   final double metallic;
   final double roughness;
 
+  /// Di bawah 1 berarti tembus pandang (kaca).
+  final double alpha;
+
   /// glTF menyimpan baseColorFactor dalam ruang warna linear.
   List<double> get linearColor => [
     for (final shift in [16, 8, 0])
       _srgbToLinear(((rgbHex >> shift) & 0xFF) / 255),
-    1,
+    alpha,
   ];
 
   static double _srgbToLinear(double c) =>
@@ -129,6 +133,7 @@ Uint8List writeGlb(List<Part> parts, Map<PartSlot, GlbMaterial> materials) {
         'metallicFactor': material.metallic,
         'roughnessFactor': material.roughness,
       },
+      if (material.alpha < 1) 'alphaMode': 'BLEND',
     });
     final a = accessors.length;
     primitives.add({

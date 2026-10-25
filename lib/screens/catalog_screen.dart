@@ -8,12 +8,23 @@ import '../utils/currency.dart';
 import 'configurator_screen.dart';
 import 'quote_screen.dart';
 
-class CatalogScreen extends StatelessWidget {
+class CatalogScreen extends StatefulWidget {
   const CatalogScreen({super.key});
+
+  @override
+  State<CatalogScreen> createState() => _CatalogScreenState();
+}
+
+class _CatalogScreenState extends State<CatalogScreen> {
+  /// `null` berarti semua kategori.
+  FurnitureCategory? _category;
 
   @override
   Widget build(BuildContext context) {
     final store = QuoteScope.of(context);
+    final items = Catalog.furniture
+        .where((t) => _category == null || t.category == _category)
+        .toList();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pilih Furnitur'),
@@ -31,16 +42,43 @@ class CatalogScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: GridView.builder(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 260,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 0.85,
-        ),
-        itemCount: Catalog.furniture.length,
-        itemBuilder: (context, i) => _FurnitureCard(type: Catalog.furniture[i]),
+      body: Column(
+        children: [
+          SizedBox(
+            height: 56,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              children: [
+                for (final c in <FurnitureCategory?>[
+                  null,
+                  ...FurnitureCategory.values,
+                ])
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: Text(c?.label ?? 'Semua'),
+                      selected: c == _category,
+                      onSelected: (_) => setState(() => _category = c),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: GridView.builder(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 260,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 0.85,
+              ),
+              itemCount: items.length,
+              itemBuilder: (context, i) => _FurnitureCard(type: items[i]),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -285,6 +285,8 @@ class _Breakdown extends StatelessWidget {
           'Hardware (${model.doors} pintu, ${model.drawers} laci)',
           price.hardware,
         ),
+      if (price.glass > 0) ('Kaca & cermin', price.glass),
+      if (price.upholstery > 0) ('Jok kain', price.upholstery),
       ('Ongkos kerja', price.labor),
     ];
     final style = Theme.of(context).textTheme.bodyMedium;
