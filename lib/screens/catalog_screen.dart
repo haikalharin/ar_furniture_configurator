@@ -7,9 +7,14 @@ import '../state/quote_store.dart';
 import '../utils/currency.dart';
 import 'configurator_screen.dart';
 import 'quote_screen.dart';
+import 'room_ar_screen.dart';
 
 class CatalogScreen extends StatefulWidget {
-  const CatalogScreen({super.key});
+  const CatalogScreen({super.key, this.returnTo});
+
+  /// Bila diisi, katalog dibuka dari layar lain (mis. Tata Ruangan AR):
+  /// setelah item ditambahkan, navigasi kembali ke rute dengan nama ini.
+  final String? returnTo;
 
   @override
   State<CatalogScreen> createState() => _CatalogScreenState();
@@ -27,8 +32,16 @@ class _CatalogScreenState extends State<CatalogScreen> {
         .toList();
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pilih Furnitur'),
+        title: Text(
+          widget.returnTo == null ? 'Pilih Furnitur' : 'Tambah ke Ruangan',
+        ),
         actions: [
+          if (widget.returnTo == null)
+            IconButton(
+              tooltip: 'Tata ruangan (AR)',
+              onPressed: () => openRoomAr(context),
+              icon: const Icon(Icons.view_in_ar),
+            ),
           IconButton(
             tooltip: 'Penawaran',
             onPressed: () => Navigator.of(context).push(
@@ -75,7 +88,8 @@ class _CatalogScreenState extends State<CatalogScreen> {
                 childAspectRatio: 0.85,
               ),
               itemCount: items.length,
-              itemBuilder: (context, i) => _FurnitureCard(type: items[i]),
+              itemBuilder: (context, i) =>
+                  _FurnitureCard(type: items[i], returnTo: widget.returnTo),
             ),
           ),
         ],
@@ -85,9 +99,10 @@ class _CatalogScreenState extends State<CatalogScreen> {
 }
 
 class _FurnitureCard extends StatelessWidget {
-  const _FurnitureCard({required this.type});
+  const _FurnitureCard({required this.type, this.returnTo});
 
   final FurnitureType type;
+  final String? returnTo;
 
   @override
   Widget build(BuildContext context) {
@@ -98,7 +113,7 @@ class _FurnitureCard extends StatelessWidget {
       child: InkWell(
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute<void>(
-            builder: (_) => ConfiguratorScreen(type: type),
+            builder: (_) => ConfiguratorScreen(type: type, returnTo: returnTo),
           ),
         ),
         child: Padding(

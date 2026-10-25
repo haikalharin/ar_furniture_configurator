@@ -6,9 +6,7 @@ import 'package:model_viewer_plus/model_viewer_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
-import '../geometry/furniture_builder.dart';
-import '../geometry/glb_writer.dart';
-import '../geometry/slot_materials.dart';
+import '../geometry/glb_file.dart';
 import '../models/configuration.dart';
 
 /// Pratinjau 3D + tombol AR untuk konfigurasi yang sedang dipilih.
@@ -43,7 +41,7 @@ class _ModelPreviewState extends State<ModelPreview> {
     final file = File(
       '${dir.path}/configurator_${widget.config.type.kind.name}.glb',
     );
-    await _write(file, widget.config);
+    await writeFurnitureGlb(file, widget.config);
     if (mounted) setState(() => _file = file);
   }
 
@@ -58,19 +56,11 @@ class _ModelPreviewState extends State<ModelPreview> {
   Future<void> _refresh() async {
     final file = _file;
     if (file == null) return;
-    await _write(file, widget.config);
+    await writeFurnitureGlb(file, widget.config);
     _version++;
     await _controller?.runJavaScript(
       "document.getElementById('mv').src = '/model?v=$_version';",
     );
-  }
-
-  static Future<void> _write(File file, FurnitureConfig config) async {
-    final bytes = writeGlb(buildFurniture(config).parts, slotMaterials(config));
-    // Tulis ke file sementara lalu rename agar viewer tidak membaca file setengah jadi.
-    final tmp = File('${file.path}.tmp');
-    await tmp.writeAsBytes(bytes, flush: true);
-    await tmp.rename(file.path);
   }
 
   @override

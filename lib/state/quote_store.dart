@@ -5,8 +5,12 @@ import '../pricing/price_calculator.dart';
 import '../utils/currency.dart';
 
 class QuoteItem {
-  QuoteItem(this.config) : price = estimatePrice(config);
+  QuoteItem(this.config) : id = _nextId++, price = estimatePrice(config);
 
+  static int _nextId = 1;
+
+  /// Penanda unik selama aplikasi berjalan, dipakai untuk file model AR.
+  final int id;
   final FurnitureConfig config;
   final PriceBreakdown price;
 }
@@ -20,9 +24,11 @@ class QuoteStore extends ChangeNotifier {
   List<QuoteItem> get items => List.unmodifiable(_items);
   int get total => _items.fold(0, (sum, item) => sum + item.price.total);
 
-  void add(FurnitureConfig config) {
-    _items.add(QuoteItem(config));
+  QuoteItem add(FurnitureConfig config) {
+    final item = QuoteItem(config);
+    _items.add(item);
     notifyListeners();
+    return item;
   }
 
   void removeAt(int index) {

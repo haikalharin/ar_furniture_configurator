@@ -8,11 +8,15 @@ import '../state/quote_store.dart';
 import '../utils/currency.dart';
 import '../widgets/model_preview.dart';
 import '../widgets/work_drawing.dart';
+import 'room_ar_screen.dart';
 
 class ConfiguratorScreen extends StatefulWidget {
-  const ConfiguratorScreen({super.key, required this.type});
+  const ConfiguratorScreen({super.key, required this.type, this.returnTo});
 
   final FurnitureType type;
+
+  /// Lihat [CatalogScreen.returnTo].
+  final String? returnTo;
 
   @override
   State<ConfiguratorScreen> createState() => _ConfiguratorScreenState();
@@ -136,12 +140,26 @@ class _ConfiguratorScreenState extends State<ConfiguratorScreen> {
       ),
       bottomNavigationBar: _PriceBar(
         total: price.total,
+        addLabel: widget.returnTo == null
+            ? 'Tambah ke penawaran'
+            : 'Taruh di ruangan',
         onAdd: () {
           QuoteScope.of(context).add(_config);
+          final returnTo = widget.returnTo;
+          if (returnTo != null) {
+            Navigator.of(context).popUntil(ModalRoute.withName(returnTo));
+            return;
+          }
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
             ..showSnackBar(
-              SnackBar(content: Text('${type.name} ditambahkan ke penawaran')),
+              SnackBar(
+                content: Text('${type.name} ditambahkan ke penawaran'),
+                action: SnackBarAction(
+                  label: 'Tata di AR',
+                  onPressed: () => openRoomAr(context),
+                ),
+              ),
             );
         },
       ),
@@ -313,9 +331,14 @@ class _Breakdown extends StatelessWidget {
 }
 
 class _PriceBar extends StatelessWidget {
-  const _PriceBar({required this.total, required this.onAdd});
+  const _PriceBar({
+    required this.total,
+    required this.addLabel,
+    required this.onAdd,
+  });
 
   final int total;
+  final String addLabel;
   final VoidCallback onAdd;
 
   @override
@@ -349,7 +372,7 @@ class _PriceBar extends StatelessWidget {
               FilledButton.icon(
                 onPressed: onAdd,
                 icon: const Icon(Icons.add),
-                label: const Text('Tambah ke penawaran'),
+                label: Text(addLabel),
               ),
             ],
           ),
