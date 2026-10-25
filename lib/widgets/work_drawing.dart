@@ -79,7 +79,7 @@ class _DrawingPainter extends CustomPainter {
           frontLeft + (p.x1 - x0) * scale,
           floorY - p.y0 * scale,
         ),
-        p.slot == PartSlot.accent ? accentStroke : stroke,
+        p.slot == PartSlot.body ? stroke : accentStroke,
       );
     }
     for (final p in parts) {
@@ -90,7 +90,7 @@ class _DrawingPainter extends CustomPainter {
           sideLeft + (p.z1 - z0) * scale,
           floorY - p.y0 * scale,
         ),
-        p.slot == PartSlot.accent ? accentStroke : stroke,
+        p.slot == PartSlot.body ? stroke : accentStroke,
       );
     }
 

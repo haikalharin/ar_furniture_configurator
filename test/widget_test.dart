@@ -12,6 +12,14 @@ void main() {
     expect(find.text(Catalog.furniture.first.name), findsOneWidget);
   });
 
+  testWidgets('filter kategori menyaring katalog', (tester) async {
+    await tester.pumpWidget(ArFurnitureApp(store: QuoteStore()));
+    await tester.tap(find.text(FurnitureCategory.dapur.label));
+    await tester.pumpAndSettle();
+    expect(find.text('Kitchen Set Bawah'), findsOneWidget);
+    expect(find.text('Lemari Pakaian'), findsNothing);
+  });
+
   test('ringkasan penawaran memuat item dan total', () {
     final store = QuoteStore()
       ..updateClient(name: 'Ibu Sari', room: 'Kamar utama')
